@@ -40,7 +40,7 @@ You can find the documentation on the Azure DevOps Generator here: https://vstsd
 ### Step 4: In Azure DevOps, update the Variables Group.
 - Go to Pipelines, Library. Click on the Variable group "Shared Resources".
 - Tick "Allow access to all pipelines.
-- Update the values of the variables to match your naming conventions needs. I've put in some generic naming, but you need to update the variables. Otherwise, the creation of some services will fail, because they've been already used.
+- Update the values of the variables to match your naming conventions needs. I've put in some generic naming, but you need to update the variables. Otherwise, the creation of some services will fail, because they've been already used. Here you also define the RabbitMQ Queue and Connection string, which will be implemented in the Application Settings of Azure Function App.
 - Don't forget to save.
 
 ### Step 5: In Azure DevOps, update the Build pipeline and Run it.
