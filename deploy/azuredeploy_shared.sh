@@ -4,9 +4,11 @@
 # -r Resource Group Name
 # -l Location Name
 # -w Log Analytics Workspace (Logic Apps Logging)
+# -s Storage Account
+# -f Function App
 # 
 # Executing it with minimum parameters:
-#   ./azuredeploy.sh -r aisshared-rg -l westeurope -w aisshared-ws
+#   ./azuredeploy.sh -r aisrabbitmq-rg -l westeurope -w aisrabbitmq-ws -s aisrabbitmqst01 -f aisrabbitmq-fa
 #
 # This script assumes that you already executed "az login" to authenticate 
 #
@@ -15,13 +17,15 @@
 # For example: az ad sp create-for-rbac --name aissync-sp
 # Copy output JSON: AppId and password
 
-while getopts r:l:w: option
+while getopts r:l:w:s:f: option
 do
 	case "${option}"
 	in
 		r) RESOURCEGROUP=${OPTARG};;
 		l) LOCATION=${OPTARG};;
 		w) LOGANALYTICS=${OPTARG};;	
+		s) STORAGEACC=${OPTARG};;	
+		f) FUNCTIONAPP=${OPTARG};;	
 	esac
 done
 
@@ -39,15 +43,17 @@ trim() {
 echo "Input parameters"
 echo "   Resource Group: ${RESOURCEGROUP}"
 echo "   Location: ${LOCATION}"
-echo "   Log Analytics Workspace: ${LOGANALYTICS}"; echo
+echo "   Log Analytics Workspace: ${LOGANALYTICS}"
+echo "   Storage Account: ${STORAGEACC}"
+echo "   Function App: ${FUNCTIONAPP}"; echo
 
 #--------------------------------------------
 # Registering providers & extentions
 #--------------------------------------------
 echo "Registering providers"
-az provider register -n Microsoft.Logic
 az provider register -n Microsoft.OperationsManagement
-
+az provider register -n Microsoft.Function
+az provider register -n Microsoft.Storage
 #--------------------------------------------
 # Creating Resource group
 #-------------------------------------------- 
@@ -70,4 +76,33 @@ then
 	az monitor log-analytics workspace create -g $RESOURCEGROUP -n $LOGANALYTICS
 else
 	echo "   Log Analytics Workspace ${LOGANALYTICS} already exists"
+fi
+
+#--------------------------------------------
+# Creating Storage Account
+#-------------------------------------------- 
+echo "Creating Storage Account ${STORAGEACC}"
+RESULT=$(az storage account show -n $STORAGEACC -g $RESOURCEGROUP)
+if [[ -z "$RESULT"  &&  -n "$STORAGEACC" ]]
+then
+	az storage account create -n $STORAGEACC -g $RESOURCEGROUP -l $LOCATION --sku Standard_LRS --kind StorageV2
+else
+	echo "   Storage Account ${STORAGEACC} already exists or is not provided"
+fi
+
+#--------------------------------------------
+# Creating Function App
+#-------------------------------------------- 
+echo "Creating Function App ${FUNCTIONAPP}"
+RESULT=$(az functionapp show --name $FUNCTIONAPP --resource-group $RESOURCEGROUP)
+if [ "$RESULT" = "" ]
+then
+	az functionapp create \
+		--name $FUNCTIONAPP \
+		--storage-account $STORAGEACC \
+		--consumption-plan-location $LOCATION \
+		--resource-group $RESOURCEGROUP \
+		--functions-version 2
+else
+	echo "   Function App ${FUNCTIONAPP} already exists"
 fi
