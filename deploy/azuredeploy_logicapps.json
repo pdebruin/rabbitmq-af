@@ -164,11 +164,11 @@
                             }
                         }
                     }
-                },
-                "dependsOn": [
-               "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]"
-            ]
+                }
             },
+            "dependsOn": [
+               "[resourceId('Microsoft.Web/connections', parameters('office365_1_Connection_Name'))]"
+            ],
             "resources": [
               {
                 "type": "providers/diagnosticSettings",
